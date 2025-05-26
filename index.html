@@ -1,0 +1,954 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+ <meta charset="UTF-8">
+ <meta name="viewport" content="width=device-width, initial-scale=1.0">
+ <title>Invoice</title>
+ <style>
+ body {
+ font-family: Arial, sans-serif;
+ margin: 0;
+ padding: 20px; /* Applied padding to the body */
+ display: flex;
+ flex-direction: column; /* Changed to column to stack children vertically */
+ justify-content: flex-start;
+ align-items: flex-start; /* Align items to the left */
+ min-height: 100vh;
+ box-sizing: border-box; /* Ensure padding is included in body's width/height */
+ width: 100vw; /* Ensure body takes full viewport width */
+ overflow-x: hidden; /* Prevent horizontal scrollbar if any overflow occurs */
+ }
+
+ .content-wrapper {
+  display: flex; /* Use flexbox for the wrapper */
+  flex-direction: column; /* Stack children (table and hr) vertically */
+  align-items: flex-start; /* Align children to the left */
+  width: auto; /* Allow wrapper to shrink to content width */
+  margin-bottom: 20px; /* Space below the entire content block */
+ }
+
+ .invoice-table {
+ width: auto; /* Changed to auto to only take up necessary space */
+ border-collapse: collapse; /* Collapse borders to ensure no spacing */
+ box-sizing: border-box; /* Still good practice */
+ /* Removed margin-bottom here, now handled by content-wrapper */
+ }
+
+ .invoice-table td {
+ border: none; /* Remove all cell borders */
+ padding: 0; /* Remove default cell padding */
+ vertical-align: top; /* Align content to the top of each cell */
+ }
+
+ .vertical-text-cell {
+ width: 1%; /* Make cell shrink-wrap content */
+ white-space: nowrap; /* Prevent text wrapping if possible */
+ }
+
+ .address-cell {
+ width: 1%; /* Make cell shrink-wrap content */
+ white-space: nowrap; /* Prevent text wrapping if possible */
+ padding-left: 0px; /* Set to 0px for immediate proximity */
+ }
+
+ .logo-cell {
+ width: 220px; /* Increased fixed width for the logo column */
+ padding-right: 20px; /* Add some space between logo and new customer info */
+ }
+
+ .customer-info-cell {
+  width: auto; /* Allow content to dictate width */
+  padding-left: 20px; /* Added padding to push content right */
+ }
+
+ .vertical-text {
+ writing-mode: vertical-rl;
+ text-orientation: mixed;
+ transform: rotate(180deg);
+ color: #008000; /* Green color from the logo */
+ font-size: 2em;
+ font-weight: bold;
+ margin-top: -10px; /* Adjusted margin-top to visually align the 'E' with the top of other elements */
+ display: inline-block; /* Essential for transform to work correctly in table cell */
+ margin-right: 0px; /* No margin here, padding on cell handles spacing */
+ }
+
+ .address {
+ line-height: 1.2;
+ font-size: 1em;
+ }
+
+ .address div {
+     margin: 0;
+     padding: 0;
+     display: block;
+ }
+
+ .invoice-number-style {
+  font-weight: bold;
+  color: #006400; /* Darker green color */
+ }
+
+ .invoice-number-input, .date-input, .customer-input {
+  width: 80px; /* Small width for the input field */
+  border: none; /* Make border invisible */
+  background-color: transparent; /* Make background invisible */
+  color: black; /* Make typed text visible */
+  padding: 0; /* Remove default padding */
+  margin: 0; /* Remove default padding */
+  outline: none; /* Remove outline on focus */
+  font-size: 1em; /* Match surrounding text size */
+  vertical-align: baseline; /* Align with surrounding text */
+ }
+
+ .date-input {
+  width: 120px; /* Wider for date picker */
+ }
+
+ .customer-input {
+  width: 150px; /* Wider for names/addresses */
+ }
+
+ .customer-address-textarea {
+  width: 150px; /* Match width of other customer inputs */
+  height: auto; /* Allow height to adjust based on rows */
+  min-height: calc(1.2em * 6); /* Approx height for 6 lines based on line-height */
+  resize: none; /* Prevent manual resizing by user */
+  border: none; /* Make border invisible */
+  background-color: transparent; /* Make background invisible */
+  color: black; /* Make typed text visible */
+  padding: 0; /* Remove default padding */
+  margin: 0; /* Remove default margin */
+  outline: none; /* Remove outline on focus */
+  font-family: Arial, sans-serif; /* Ensure font matches body */
+  font-size: 1em; /* Match surrounding text size */
+  line-height: 1.2; /* Match surrounding line height */
+ }
+
+ .logo {
+ width: 220px; /* Increased fixed width for the logo */
+ height: 220px; /* Increased fixed height for the logo */
+ object-fit: contain; /* Ensure the image fits within the dimensions without cropping */
+ display: block; /* Ensure the image behaves as a block for consistent spacing */
+ margin-left: 0px; /* Set to 0px for immediate proximity */
+ margin-top: -10px; /* Adjusted margin-top to move the logo up */
+ }
+
+ hr {
+  width: 100%; /* HR now takes 100% of its parent (.content-wrapper) */
+  border: 0.5px solid #ccc;
+ }
+
+ /* New table for item details */
+ .item-details-table {
+     width: 100%; /* Take full width of content-wrapper */
+     border-collapse: collapse;
+     margin-top: 20px; /* Space above the new table */
+ }
+
+ .item-details-table th,
+ .item-details-table td {
+     border: 1px solid #eee; /* Light border for table cells */
+     padding: 8px;
+     text-align: left;
+     vertical-align: top;
+ }
+
+ .item-details-table th {
+     background-color: #f2f2f2;
+     font-weight: bold;
+ }
+
+ /* Adjusted widths for quantity, unit price, and total */
+ .item-details-table .item-quantity-input {
+     width: 40px; /* Very small width for 2 digits */
+     border: none;
+     padding: 8px;
+     box-sizing: border-box;
+     font-size: 1em;
+     background-color: transparent;
+     color: black;
+     outline: none;
+ }
+
+ .item-details-table .item-unit-price-input {
+     width: 80px; /* Minimized width */
+     border: none;
+     padding: 8px;
+     box-sizing: border-box;
+     font-size: 1em;
+     background-color: transparent;
+     color: black;
+     outline: none;
+ }
+
+ .item-details-table .item-total-output {
+     width: 100px; /* Minimized width */
+     min-width: 80px; /* Ensure it doesn't get too small */
+     border: none;
+     padding: 8px;
+     box-sizing: border-box;
+     font-size: 1em;
+     background-color: transparent;
+     color: black;
+     outline: none;
+ }
+
+
+ .item-details-table .item-description-input { /* Styles for the new textarea */
+     width: calc(100% - 16px);
+     min-height: 1.2em; /* At least one line tall */
+     height: auto; /* Allow height to adjust */
+     resize: vertical; /* Allow vertical resizing */
+     overflow: hidden; /* Hide scrollbars initially, JS will adjust height */
+     border: none;
+     padding: 8px;
+     box-sizing: border-box;
+     font-size: 1em;
+     background-color: transparent;
+     color: black;
+     outline: none;
+     font-family: Arial, sans-serif; /* Ensure font consistency */
+     line-height: 1.2; /* Match surrounding line height */
+ }
+
+ /* New style for the print-only description div */
+ .item-description-print-only {
+     display: none; /* Hidden by default on screen */
+     padding: 8px;
+     font-size: 1em;
+     line-height: 1.2;
+     word-wrap: break-word; /* Ensure long words break */
+ }
+
+
+ .action-buttons-cell {
+     width: 80px; /* Fixed width for buttons column */
+     text-align: center;
+     white-space: nowrap;
+ }
+
+ .add-item-btn, .delete-item-btn {
+     background-color: #008000; /* Green for add */
+     color: white;
+     border: none;
+     padding: 5px 10px;
+     margin: 2px;
+     cursor: pointer;
+     border-radius: 4px;
+     opacity: 0; /* Hidden by default */
+     transition: opacity 0.3s ease-in-out;
+ }
+
+ .delete-item-btn {
+     background-color: #cc0000; /* Red for delete */
+ }
+
+ .invoice-item-row:hover .add-item-btn,
+ .invoice-item-row:hover .delete-item-btn {
+     opacity: 1; /* Visible on row hover */
+ }
+
+ /* Grand Total row styling */
+ .item-details-table tfoot td {
+     font-weight: bold;
+     border-top: 2px solid #ccc; /* Stronger border above total */
+     padding-top: 10px;
+ }
+ .item-details-table tfoot .grand-total-label {
+     text-align: right;
+     padding-right: 10px;
+ }
+ .item-details-table tfoot .grand-total-amount {
+     text-align: left; /* Align amount to left within its cell */
+     background-color: #e0ffe0; /* Light green background for total */
+     padding: 8px;
+     min-width: 100px; /* Ensure enough space for total */
+     display: inline-block; /* Allow padding/background to apply */
+ }
+
+ /* New payment and notes section */
+ .payment-notes-section {
+    margin-top: 20px;
+    padding: 10px 0;
+    border-top: 1px dashed #ccc; /* Optional separator */
+ }
+
+ .payment-due-date-container, .note-container {
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px; /* Space between the two new lines */
+ }
+
+ .payment-notes-section label {
+    font-weight: bold;
+    margin-right: 10px;
+    min-width: 120px; /* Align labels */
+ }
+
+ .payment-notes-section input, .payment-notes-section textarea {
+    flex-grow: 1; /* Allow input/textarea to take available space */
+    border: 1px solid #ccc;
+    padding: 5px;
+    border-radius: 3px;
+    max-width: 300px; /* Limit input width for readability */
+ }
+
+ /* Specific styling for the note textarea */
+ .note-input {
+    max-width: 400px; /* Wider for the note */
+    height: auto; /* Allow height to adjust */
+    min-height: 1.2em; /* At least one line tall */
+    resize: vertical; /* Allow vertical resizing */
+    overflow: hidden; /* Hide scrollbars initially, JS will adjust height */
+ }
+ /* New style for the print-only note div */
+ .note-print-only {
+     display: none; /* Hidden by default on screen */
+     padding: 5px;
+     font-size: 1em;
+     line-height: 1.2;
+     word-wrap: break-word; /* Ensure long words break */
+ }
+
+
+ /* How to Pay section */
+ .how-to-pay {
+  margin-top: 30px; /* Space above this section */
+  width: 100%; /* Take full width of content wrapper */
+  max-width: 600px; /* Limit width for readability */
+  line-height: 1.5;
+ }
+
+ .how-to-pay h3 {
+  color: #006400; /* Darker green for heading */
+  margin-bottom: 10px;
+ }
+
+ .how-to-pay p {
+  margin-bottom: 5px;
+ }
+
+ .bank-details {
+  margin-top: 10px;
+  padding-left: 20px; /* Indent bank details */
+ }
+
+ .bank-details p {
+  margin-bottom: 2px;
+ }
+
+ .button-container { /* New container for print/PDF button */
+  display: flex;
+  gap: 10px; /* Space between buttons (if there were more) */
+  margin-bottom: 20px; /* Space below buttons */
+  align-self: flex-end; /* Align to the right within the flex column */
+  opacity: 0; /* Hidden by default */
+  transition: opacity 0.3s ease-in-out;
+ }
+
+ .button-container:hover {
+  opacity: 1; /* Visible on hover */
+ }
+
+ .print-pdf-button { /* Combined styling for the single button */
+  background-color: #008000; /* Green color */
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  cursor: pointer;
+  border-radius: 5px;
+  font-size: 1em;
+ }
+
+
+ /* Responsive adjustments for smaller screens */
+ @media (max-width: 600px) {
+  body {
+      padding: 10px; /* Reduce padding on small screens */
+  }
+  .content-wrapper {
+  width: 100%; /* Wrapper takes full width on mobile */
+  align-items: center; /* Center items when stacked */
+  }
+
+ .invoice-table {
+ display: block; /* Treat table as a block for stacking */
+ width: 100%; /* Ensure table takes full width on mobile */
+ }
+
+ .invoice-table tr {
+  display: flex; /* Use flex to stack cells */
+  flex-direction: column;
+  align-items: center; /* Center items when stacked */
+ }
+
+ .invoice-table td {
+ display: block; /* Stack rows and cells */
+ width: 100%; /* Take full width when stacked */
+ text-align: center; /* Center content when stacked */
+ padding: 0; /* Reset padding for stacked cells */
+ }
+
+ .vertical-text-cell, .address-cell, .logo-cell, .customer-info-cell {
+ padding-right: 0; /* Remove right padding when stacked */
+ padding-bottom: 10px; /* Add space between stacked elements */
+ padding-top: 0; /* Reset padding-top for mobile */
+ white-space: normal; /* Allow text wrapping on mobile */
+ }
+
+ .vertical-text {
+ writing-mode: horizontal-tb;
+ text-orientation: unset;
+ transform: rotate(0deg);
+ margin-top: 0; /* Reset top adjustment for mobile */
+ margin-right: 0; /* Reset margin for mobile */
+ display: block; /* Ensure it takes full width */
+ }
+
+ .address, .customer-info-cell div {
+ text-align: center;
+ margin-bottom: 10px; /* Space below address on mobile */
+ }
+
+ .logo {
+ margin-top: 0px; /* Space above logo on mobile */
+ width: 170px; /* Adjusted logo size for smaller screens */
+ height: 170px; /* Adjusted logo size for smaller screens */
+ margin-left: auto; /* Center logo */
+ margin-right: auto; /* Center logo */
+ }
+
+ .invoice-number-input, .date-input, .customer-input, .customer-address-textarea, .item-details-table .item-description-input {
+  width: calc(100% - 20px); /* Adjust width for mobile */
+  max-width: 200px; /* Limit max width for all inputs on mobile */
+  margin-bottom: 5px; /* Space between inputs on mobile */
+ }
+
+ /* Responsive adjustments for the new table on mobile */
+ .item-details-table {
+     display: block;
+     width: 100%;
+ }
+ .item-details-table thead, .item-details-table tbody, .item-details-table tr, .item-details-table th, .item-details-table td {
+     display: block;
+     width: 100%;
+ }
+ .item-details-table tr {
+     margin-bottom: 15px;
+     border: 1px solid #eee;
+ }
+ .item-details-table td {
+     text-align: right;
+     padding-left: 50%;
+     position: relative;
+ }
+ .item-details-table td::before {
+     content: attr(data-label);
+     position: absolute;
+     left: 10px;
+     width: 45%;
+     text-align: left;
+     font-weight: bold;
+ }
+ .item-details-table th {
+     display: none; /* Hide table headers on mobile */
+ }
+ .action-buttons-cell {
+     text-align: center;
+     width: 100%;
+     padding-top: 10px;
+ }
+ .add-item-btn, .delete-item-btn {
+     opacity: 1; /* Always visible on mobile for easier interaction */
+ }
+ .item-details-table tfoot td {
+     display: flex; /* Use flex to align label and amount */
+     justify-content: space-between;
+     align-items: center;
+     padding-left: 10px; /* Reset padding for mobile */
+     padding-right: 10px;
+ }
+ .item-details-table tfoot .grand-total-label {
+     text-align: left; /* Align label to left on mobile */
+     padding-right: 0;
+ }
+
+ .payment-notes-section {
+    width: 100%;
+    padding: 10px;
+    box-sizing: border-box;
+ }
+ .payment-due-date-container, .note-container {
+    flex-direction: column; /* Stack label and input */
+    align-items: center;
+ }
+ .payment-notes-section label {
+    min-width: unset; /* Remove fixed width */
+    margin-right: 0;
+    margin-bottom: 5px;
+ }
+ .payment-notes-section input, .payment-notes-section textarea {
+    width: calc(100% - 20px); /* Adjust for padding */
+    max-width: 250px; /* Limit max width */
+ }
+
+
+ .how-to-pay {
+  text-align: center; /* Center content on mobile */
+  padding: 0 10px; /* Add horizontal padding */
+ }
+ .bank-details {
+  padding-left: 0; /* Remove indent on mobile */
+ }
+
+ .button-container {
+  align-self: center; /* Center buttons on mobile */
+  width: calc(100% - 40px); /* Adjust width for padding */
+  max-width: 200px; /* Limit max width */
+  opacity: 1; /* Always visible on mobile for easier interaction */
+  flex-direction: column; /* Stack buttons vertically on mobile */
+ }
+ .print-pdf-button {
+  width: 100%; /* Full width for button on mobile */
+  margin-bottom: 5px; /* Space below button if stacked */
+ }
+ }
+
+ /* Print-specific styles for A4 page representation */
+ @media print {
+  body {
+  width: 210mm; /* A4 width */
+  height: 297mm; /* A4 height */
+  margin: 0;
+  padding: 10mm; /* A small print margin for content */
+  box-sizing: border-box;
+  overflow: hidden; /* Prevent scrollbars in print */
+  }
+
+  .content-wrapper {
+  width: 100%; /* Ensure wrapper fills print area */
+  margin-bottom: 0; /* No extra margin at bottom of wrapper in print */
+  }
+
+  .invoice-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 10mm;
+  }
+  .invoice-table th,
+  .invoice-table td {
+      border: 1px solid #eee;
+      padding: 5px;
+      text-align: left;
+  }
+
+  /* Ensure elements are not stacked on print */
+  .invoice-table tr, .invoice-table td {
+  display: table-row; /* Revert to table-row for tr */
+  display: table-cell; /* Revert to table-cell for td */
+  width: auto; /* Allow natural table cell width */
+  text-align: left; /* Revert text alignment */
+  padding: 0; /* No padding on cells in print */
+  }
+
+  .vertical-text-cell, .address-cell, .logo-cell, .customer-info-cell {
+  padding-right: 0; /* Remove any padding that might add space */
+  padding-bottom: 0;
+  padding-top: 0;
+  white-space: nowrap; /* Keep text on one line if possible */
+  }
+
+  .vertical-text {
+  margin-top: -10px; /* Maintain screen alignment adjustment */
+  margin-right: 0px; /* Maintain screen proximity */
+  }
+
+  .address {
+  margin-bottom: 0; /* No extra space below address in print */
+  }
+
+  .logo {
+  margin-top: -10px; /* Maintain screen alignment adjustment */
+  width: 220px; /* Fixed size for print */
+  height: 220px; /* Fixed size for print */
+  }
+
+  .invoice-number-input, .date-input, .customer-input, .customer-address-textarea {
+      border: none; /* Ensure no border on print */
+      background-color: transparent; /* Ensure transparent background on print */
+      color: black; /* Make text visible when printed */
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+      padding: 0 !important;
+  }
+  .item-details-table .item-description-input {
+      display: none !important; /* Hide textarea in print */
+  }
+  .item-details-table .item-description-print-only { /* Show and style print-only div */
+      display: block !important;
+      white-space: normal !important; /* Allow text to wrap */
+      overflow: visible !important; /* Ensure all content is visible */
+      width: 100% !important; /* Take full available width */
+      padding: 0 !important; /* Remove padding from this element */
+  }
+
+  hr {
+   width: 100%; /* HR takes 100% of its parent (.content-wrapper) */
+   margin-top: 0; /* Removed margin-top for print */
+   border: 0.5px solid #ccc;
+  }
+
+  /* Print styles for the new table */
+  .item-details-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10mm;
+  }
+  .item-details-table th,
+  .item-details-table td {
+      border: 1px solid #eee;
+      padding: 5px;
+      text-align: left;
+  }
+  /* Adjust column widths for print to ensure description fits */
+  .item-details-table th:nth-child(1), /* Description header */
+  .item-details-table td:nth-child(1) { /* Description cell */
+      width: 70% !important; /* Increased width for description */
+  }
+  .item-details-table th:nth-child(2), /* Quantity header */
+  .item-details-table td:nth-child(2) { /* Quantity cell */
+      width: 7% !important; /* Adjusted quantity width */
+  }
+  .item-details-table th:nth-child(3), /* Unit Price header */
+  .item-details-table td:nth-child(3) { /* Unit Price cell */
+      width: 10% !important; /* Adjusted unit price width */
+  }
+  .item-details-table th:nth-child(4), /* Total header */
+  .item-details-table td:nth-child(4) { /* Total cell */
+      width: 10% !important; /* Adjusted total width */
+  }
+  .action-buttons-cell { /* Make this column invisible in print */
+      border: none !important;
+      background-color: transparent !important;
+      padding: 0 !important;
+      width: 0 !important; /* Collapse the width */
+      overflow: hidden; /* Hide any overflow */
+  }
+  .add-item-btn, .delete-item-btn {
+      display: none !important; /* Hide buttons when printing */
+  }
+  .item-details-table input, .item-details-table textarea {
+      border: none !important;
+      background-color: transparent !important;
+      color: black !important;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+      padding: 0 !important;
+  }
+  .item-details-table tfoot td {
+      border-top: 2px solid #ccc;
+      padding-top: 5px;
+  }
+  .item-details-table tfoot .grand-total-label {
+      text-align: right;
+  }
+  .item-details-table tfoot .grand-total-amount {
+      background-color: #e0ffe0; /* Keep background for print */
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+  }
+
+  /* Print styles for new payment/notes section */
+  .payment-notes-section {
+      margin-top: 10mm;
+      border-top: 1px dashed #ccc; /* Keep separator in print */
+      padding: 5mm 0;
+      display: flex; /* Use flexbox for layout in print */
+      flex-direction: column; /* Stack items vertically */
+  }
+  .payment-due-date-container, .note-container {
+      display: flex; /* Ensure flex for label and input */
+      align-items: baseline; /* Align text baselines */
+      margin-bottom: 5px; /* Less space in print */
+  }
+  .payment-notes-section label {
+      color: black;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+      min-width: 120px; /* Keep consistent width for labels in print */
+      margin-right: 10px; /* Space between label and input */
+  }
+  .payment-notes-section input { /* Applies to date input */
+      border: none !important;
+      background-color: transparent !important;
+      color: black !important;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+      padding: 0 !important;
+      width: 100% !important; /* Ensure it takes full available width */
+      flex-grow: 1; /* Allow input to grow */
+  }
+  .note-input { /* Hide the textarea for the note in print */
+      display: none !important;
+  }
+  .note-print-only { /* Show and style print-only note div */
+      display: block !important;
+      white-space: normal !important; /* Allow text to wrap */
+      overflow: visible !important; /* Ensure all content is visible */
+      width: 100% !important; /* Take full available width */
+      padding: 0 !important; /* Remove padding from this element */
+  }
+
+
+  .how-to-pay {
+   margin-top: 15mm; /* Space above this section for print */
+   text-align: left; /* Align left for print */
+   max-width: none; /* No max-width restriction for print */
+   padding: 0; /* No padding for print */
+  }
+  .bank-details {
+   padding-left: 20px; /* Maintain indent for print */
+  }
+
+  .button-container {
+      display: none; /* Hide button container when printing */
+  }
+ }
+ </style>
+</head>
+<body>
+ <div class="content-wrapper">
+  <div class="button-container">
+   <button class="print-pdf-button" onclick="window.print()">Print/Save as PDF</button>
+  </div>
+  <table class="invoice-table">
+   <tr>
+   <td class="vertical-text-cell">
+   <div class="vertical-text">INVOICE</div>
+   </td>
+   <td class="address-cell">
+   <div class="address">
+   <span class="invoice-number-style">Invoice Number:</span> <input type="number" class="invoice-number-input"><br><br> <div>6 Sanderson Terrace,</div>
+   <div>Widdrington Station,</div>
+   <div>Morpeth,</div>
+   <div>Northumberland,</div>
+   <div>NE615RJ</div> <div>07711950912</div> </div>
+   </td>
+   <td class="logo-cell">
+   <img src="https://github.com/jamieb177/Deliverycost/blob/main/icon.png?raw=true" alt="Kay's Little Flower Shop Logo" class="logo">
+   </td>
+   <td class="customer-info-cell">
+   <div>Date: <input type="date" class="date-input"></div>
+   <br>
+   <div>Customer Name: <input type="text" class="customer-input"></div>
+   <div>Customer Address: <br><textarea class="customer-address-textarea" rows="6"></textarea></div>
+   </td>
+   </tr>
+  </table>
+
+  <hr style="border: 0.5px solid #ccc;">
+
+  <table class="item-details-table">
+      <thead>
+          <tr>
+              <th>Description</th>
+              <th>Quantity</th>
+              <th>Unit Price</th>
+              <th>Total</th>
+              <th></th> </tr>
+      </thead>
+      <tbody id="invoice-items-body">
+          <tr class="invoice-item-row">
+              <td>
+                  <textarea class="item-description-input" data-label="Description" rows="1"></textarea>
+                  <div class="item-description-print-only"></div> </td>
+              <td><input type="number" class="item-quantity-input" data-label="Quantity"></td>
+              <td><input type="number" class="item-unit-price-input" data-label="Unit Price"></td>
+              <td><input type="text" class="item-total-output" readonly data-label="Total"></td>
+              <td class="action-buttons-cell">
+                  <button class="add-item-btn" title="Add new item line">+</button>
+                  <button class="delete-item-btn" title="Delete this item line">-</button>
+              </td>
+          </tr>
+      </tbody>
+      <tfoot>
+          <tr>
+              <td colspan="3" class="grand-total-label">Delivery Cost:</td>
+              <td colspan="2" class="grand-total-amount">
+                  <input type="number" id="delivery-cost-input" class="item-total-output" value="0.00">
+              </td>
+          </tr>
+          <tr>
+              <td colspan="3" class="grand-total-label">Grand Total:</td>
+              <td colspan="2" class="grand-total-amount" id="grand-total-amount">0.00</td>
+          </tr>
+      </tfoot>
+  </table>
+
+  <div class="payment-notes-section">
+      <div class="payment-due-date-container">
+          <label for="payment-due-date">Payment due by:</label>
+          <input type="date" id="payment-due-date" class="date-input">
+      </div>
+      <div class="note-container">
+          <label for="invoice-note">Note:</label>
+          <textarea id="invoice-note" class="note-input" rows="1"></textarea> <div class="note-print-only"></div> </div>
+  </div>
+
+  <div class="how-to-pay">
+      <h3>How to Pay:</h3>
+      <p>To pay by card, please phone: <strong>07711950912</strong></p>
+      <p>Alternatively, you can pay by bank transfer. Using the below details:</p>
+      <div class="bank-details">
+          <p><strong>Starling Bank</strong></p>
+          <p><strong>Kay Blacklock</strong></p>
+          <p>Account Number: 50442056</p>
+          <p>Sort Code: 60-83-71</p>
+      </div>
+  </div>
+ </div>
+
+ <script>
+ document.addEventListener('DOMContentLoaded', () => {
+     const invoiceItemsBody = document.getElementById('invoice-items-body');
+     const grandTotalAmount = document.getElementById('grand-total-amount');
+     const deliveryCostInput = document.getElementById('delivery-cost-input'); // Get the delivery cost input
+     const invoiceNoteTextarea = document.getElementById('invoice-note'); // Get the note textarea
+
+     // Function to calculate total for a given row
+     function calculateRowTotal(row) {
+         const quantityInput = row.querySelector('.item-quantity-input');
+         const unitPriceInput = row.querySelector('.item-unit-price-input');
+         const totalOutput = row.querySelector('.item-total-output');
+
+         const quantity = parseFloat(quantityInput.value) || 0;
+         const unitPrice = parseFloat(unitPriceInput.value) || 0;
+
+         const total = (quantity * unitPrice).toFixed(2); // Format to 2 decimal places
+         totalOutput.value = total;
+         updateGrandTotal(); // Update grand total after row total changes
+     }
+
+     // Function to auto-expand textarea height and sync with print-only div
+     function autoExpandTextarea(textarea) {
+         textarea.style.height = 'auto'; // Reset height to recalculate
+         textarea.style.height = textarea.scrollHeight + 'px'; // Set height to scrollHeight
+
+         // Sync content to print-only div
+         const printOnlyDiv = textarea.nextElementSibling; // Assumes print-only div is next sibling
+         if (printOnlyDiv && (printOnlyDiv.classList.contains('item-description-print-only') || printOnlyDiv.classList.contains('note-print-only'))) {
+             printOnlyDiv.textContent = textarea.value;
+         }
+     }
+
+     // Function to update the grand total
+     function updateGrandTotal() {
+         let totalSum = 0;
+         document.querySelectorAll('.item-total-output').forEach(outputField => {
+             // Exclude the delivery cost input itself from this sum, as it's handled separately
+             if (outputField.id !== 'delivery-cost-input') {
+                 totalSum += parseFloat(outputField.value) || 0;
+             }
+         });
+
+         const deliveryCost = parseFloat(deliveryCostInput.value) || 0;
+         totalSum += deliveryCost; // Add delivery cost to the grand total
+
+         grandTotalAmount.textContent = totalSum.toFixed(2); // Update the grand total display
+     }
+
+     // Function to add a new row
+     function addRow() {
+         const newRow = document.createElement('tr');
+         newRow.classList.add('invoice-item-row');
+         newRow.innerHTML = `
+             <td>
+                 <textarea class="item-description-input" data-label="Description" rows="1"></textarea>
+                 <div class="item-description-print-only"></div>
+             </td>
+             <td><input type="number" class="item-quantity-input" data-label="Quantity"></td>
+             <td><input type="number" class="item-unit-price-input" data-label="Unit Price"></td>
+             <td><input type="text" class="item-total-output" readonly data-label="Total"></td>
+             <td class="action-buttons-cell">
+                 <button class="add-item-btn" title="Add new item line">+</button>
+                 <button class="delete-item-btn" title="Delete this item line">-</button>
+             </td>
+         `;
+
+         // Attach event listeners for the new row
+         const descriptionTextarea = newRow.querySelector('.item-description-input');
+         const quantityInput = newRow.querySelector('.item-quantity-input');
+         const unitPriceInput = newRow.querySelector('.item-unit-price-input');
+
+         descriptionTextarea.addEventListener('input', () => autoExpandTextarea(descriptionTextarea));
+         quantityInput.addEventListener('input', () => calculateRowTotal(newRow));
+         unitPriceInput.addEventListener('input', () => calculateRowTotal(newRow));
+
+         const deleteButton = newRow.querySelector('.delete-item-btn');
+         deleteButton.addEventListener('click', (event) => deleteRow(event.target));
+         const addButton = newRow.querySelector('.add-item-btn');
+         addButton.addEventListener('click', addRow); // Add button adds new row
+
+         invoiceItemsBody.appendChild(newRow);
+         autoExpandTextarea(descriptionTextarea); // Ensure new textarea is correctly sized and syncs content
+         updateGrandTotal(); // Update grand total after adding a row
+     }
+
+     // Function to delete a row
+     function deleteRow(buttonElement) {
+         const rowToDelete = buttonElement.closest('.invoice-item-row');
+         if (invoiceItemsBody.children.length > 1) { // Ensure at least one row remains
+             invoiceItemsBody.removeChild(rowToDelete);
+             updateGrandTotal(); // Update grand total after deleting a row
+         } else {
+             // If it's the last row, clear its content instead of deleting
+             const inputs = rowToDelete.querySelectorAll('input, textarea');
+             inputs.forEach(input => input.value = '');
+             calculateRowTotal(rowToDelete); // Recalculate to set total to 0
+             autoExpandTextarea(rowToDelete.querySelector('.item-description-input')); // Reset textarea height and sync
+             updateGrandTotal(); // Update grand total after clearing last row
+         }
+     }
+
+     // Initial setup: Add event listeners to the first row (if present)
+     // and ensure add/delete buttons work for it.
+     const initialRow = invoiceItemsBody.querySelector('.invoice-item-row');
+     if (initialRow) {
+         const descriptionTextarea = initialRow.querySelector('.item-description-input');
+         const quantityInput = initialRow.querySelector('.item-quantity-input');
+         const unitPriceInput = initialRow.querySelector('.item-unit-price-input');
+
+         descriptionTextarea.addEventListener('input', () => autoExpandTextarea(descriptionTextarea));
+         quantityInput.addEventListener('input', () => calculateRowTotal(initialRow));
+         unitPriceInput.addEventListener('input', () => calculateRowTotal(initialRow));
+
+         const deleteButton = initialRow.querySelector('.delete-item-btn');
+         deleteButton.addEventListener('click', (event) => deleteRow(event.target));
+         const addButton = initialRow.querySelector('.add-item-btn');
+         addButton.addEventListener('click', addRow);
+
+         autoExpandTextarea(descriptionTextarea); // Ensure initial textarea is correctly sized and syncs content
+         updateGrandTotal(); // Calculate initial grand total
+     } else {
+         // If for some reason the initial row isn't there, add one
+         addRow();
+     }
+
+     // Add event listener for the new invoice note textarea
+     if (invoiceNoteTextarea) {
+         invoiceNoteTextarea.addEventListener('input', () => autoExpandTextarea(invoiceNoteTextarea));
+         autoExpandTextarea(invoiceNoteTextarea); // Initial sizing and sync
+     }
+
+     // Add event listener for delivery cost input
+     if (deliveryCostInput) {
+         deliveryCostInput.addEventListener('input', updateGrandTotal);
+     }
+
+     // Initial calculation of grand total on load
+     updateGrandTotal();
+ });
+ </script>
+</body>
+</html>
